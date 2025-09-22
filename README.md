@@ -1,6 +1,7 @@
 # Ntn2DC-TaskNotify
 
-NotionデータベースとDiscord Webhookを連携し、タスクのステータス変更を自動的にDiscordに通知するPythonアプリケーションです。
+プロジェクト"メテオコア・レギオン"専用のアプリケーションです。
+NotionデータベースとDiscord Webhookを連携し、タスクのステータス変更を自動的にDiscordに通知を行います。
 
 ## 機能
 
