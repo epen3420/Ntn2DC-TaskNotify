@@ -27,6 +27,7 @@ CONTENT_TYPE_JSON = "application/json"
 
 # NotionAPI: API関連の定数
 NOTION_API_BASE_URL = "https://api.notion.com/v1/databases/"
+NOTION_PAGES_API_URL = "https://api.notion.com/v1/pages/"
 QUERY_ENDPOINT = "/query"
 NOTION_API_VERSION = "2022-06-28"
 
@@ -49,6 +50,7 @@ STATUS_NAME_KEY = "status_name"
 PROP_TITLE_NAME = "名前"
 PROP_STATUS_NAME = "ステータス"
 PROP_ASIGNEE_NAME = "担当者"
+PROP_CHECKER_NAME = "確認者"
 PROP_SUPRESS_NOTIFY_NAME = "非通知"
 PROP_FORCE_NOTIFY_NAME = "強制通知"
 
@@ -97,25 +99,183 @@ def build_notion_url(page_id: str) -> str:
     clean_id = page_id.replace("-", "")
     return f"https://www.notion.so/{clean_id}"
 
-def send_discord_notification(title, page_id, assignees):
-    mentions = []
-    unknowns = []
+def update_page_property(page_id: str, property_name: str, property_value):
+    """
+    指定されたページIDのプロパティを更新する
+    
+    Args:
+        page_id (str): 更新対象のページID
+        property_name (str): 更新するプロパティ名
+        property_value: 設定する値（プロパティタイプに応じて適切な形式で指定）
+                       - text/title: str
+                       - select: str (選択肢の名前)
+                       - multi_select: list[str] (選択肢の名前のリスト)
+                       - checkbox: bool
+                       - number: int/float
+                       - date: str (ISO形式: "2023-12-25" または "2023-12-25T10:30:00.000Z")
+    
+    Returns:
+        dict: 更新後のページ情報
+        
+    Raises:
+        requests.HTTPError: API呼び出しでエラーが発生した場合
+    """
+    url = f"{NOTION_PAGES_API_URL}{page_id}"
+    
+    # プロパティの値を適切な形式に変換
+    property_data = _format_property_value(property_name, property_value)
+    
+    payload = {
+        "properties": {
+            property_name: property_data
+        }
+    }
+    
+    response = requests.patch(url, headers=HEADERS, json=payload)
+    response.raise_for_status()
+    return response.json()
+
+def _format_property_value(property_name: str, value):
+    """
+    プロパティの値を適切なNotion API形式に変換する
+    
+    Args:
+        property_name (str): プロパティ名
+        value: 設定する値
+        
+    Returns:
+        dict: Notion API形式のプロパティデータ
+    """
+    # 既知のプロパティタイプに基づいて形式を決定
+    if property_name == PROP_TITLE_NAME:  # タイトル
+        if isinstance(value, str):
+            return {
+                "title": [
+                    {
+                        "text": {
+                            "content": value
+                        }
+                    }
+                ]
+            }
+    elif property_name == PROP_STATUS_NAME:  # ステータス（select）
+        if isinstance(value, str):
+            return {
+                "status": {
+                    "name": value
+                }
+            }
+    elif property_name == PROP_ASIGNEE_NAME:  # 担当者（multi_select）
+        if isinstance(value, list):
+            return {
+                "multi_select": [
+                    {"name": name} for name in value
+                ]
+            }
+        elif isinstance(value, str):
+            return {
+                "multi_select": [
+                    {"name": value}
+                ]
+            }
+    elif property_name in [PROP_SUPRESS_NOTIFY_NAME, PROP_FORCE_NOTIFY_NAME]:  # チェックボックス
+        if isinstance(value, bool):
+            return {
+                "checkbox": value
+            }
+    
+    # 一般的なプロパティタイプの処理
+    if isinstance(value, bool):
+        return {"checkbox": value}
+    elif isinstance(value, (int, float)):
+        return {"number": value}
+    elif isinstance(value, str):
+        # 文字列の場合、まずはselectとして試行
+        return {
+            "select": {
+                "name": value
+            }
+        }
+    elif isinstance(value, list):
+        # リストの場合、multi_selectとして処理
+        return {
+            "multi_select": [
+                {"name": str(item)} for item in value
+            ]
+        }
+    
+    raise ValueError(f"Unsupported property type for {property_name}: {type(value)}")
+
+def update_page_multiple_properties(page_id: str, properties: dict):
+    """
+    指定されたページIDの複数のプロパティを一度に更新する
+    
+    Args:
+        page_id (str): 更新対象のページID
+        properties (dict): プロパティ名をキー、値をバリューとする辞書
+        
+    Returns:
+        dict: 更新後のページ情報
+        
+    Example:
+        update_page_multiple_properties(
+            page_id="xxx-xxx-xxx",
+            properties={
+                "名前": "新しいタスク名",
+                "ステータス": "進行中",
+                "担当者": ["山田太郎", "佐藤花子"],
+                "非通知": False
+            }
+        )
+    """
+    url = f"{NOTION_PAGES_API_URL}{page_id}"
+    
+    formatted_properties = {}
+    for prop_name, prop_value in properties.items():
+        formatted_properties[prop_name] = _format_property_value(prop_name, prop_value)
+    
+    payload = {
+        "properties": formatted_properties
+    }
+    
+    response = requests.patch(url, headers=HEADERS, json=payload)
+    response.raise_for_status()
+    return response.json()
+
+def send_discord_notification(title, page_id, assignees, checkers):
+    asigneeMentions = []
+    asigneeUnknowns = []
+    checkerMentions = []
+    checkerUnknowns = []
+
+    NO_MENTIONS_MSG = "（メンション対象なし）"
+
     user_map = load_user_map()
     page_url = build_notion_url(page_id)
 
     for name in assignees:
         discord_id = user_map.get(name)
         if discord_id:
-            mentions.append(f"<@{discord_id}>")
+            asigneeMentions.append(f"<@{discord_id}>")
         else:
-            unknowns.append(name)
+            asigneeUnknowns.append(name)
 
-    mention_str = " ".join(mentions) if mentions else "（メンション対象なし）"
-    unknown_mention_str = " ".join(unknowns) if unknowns else ""
-    unknown_note = f"\n-# DiscordIDが未登録です: {', '.join(unknowns)}" if unknowns else ""
+    for name in checkers:
+        discord_id = user_map.get(name)
+        if discord_id:
+            checkerMentions.append(f"<@{discord_id}>")
+        else:
+            checkerUnknowns.append(name)
+
+    asignee_mention_str = " ".join(asigneeMentions)
+    asignee_unknown_str = " ".join(asigneeUnknowns)
+    checker_mention_str = " ".join(checkerMentions)
+    checker_unknown_str = " ".join(checkerUnknowns)
+    asignee_unknown_note = f"\n-# 担当者のDiscordIDが未登録です: {', '.join(asigneeUnknowns)}" if asigneeUnknowns else ""
+    checker_unknown_note = f"\n-# 確認者のDiscordIDが未登録です: {', '.join(checkerUnknowns)}" if checkerUnknowns else ""
 
     message = {
-        "content": f"# {title}\n担当者:{mention_str}{unknown_mention_str}\nリンク: {page_url}{unknown_note}",
+        "content": f"# {title}\n担当者:{asignee_mention_str}{asignee_unknown_str}\n確認者:{checker_mention_str}{checker_unknown_str}\nリンク: {page_url}\n{asignee_unknown_note}\n{checker_unknown_note}",
         "flags": 4096 # サイレントメッセージとして送信する
     }
     requests.post(DISCORD_WEBHOOK_URL, json=message)
@@ -147,6 +307,13 @@ def main():
 
         if assignee_prop and assignee_prop.get("type") == "multi_select":
             assignee_names = [sel["name"] for sel in assignee_prop["multi_select"]]
+
+        # 確認者も同様に取得
+        checker_names = []
+        checker_prop = page[KEY_PRPPERTIES].get(PROP_CHECKER_NAME)
+
+        if checker_prop and checker_prop.get("type") == "multi_select":
+            checker_names = [sel["name"] for sel in checker_prop["multi_select"]]
             
 		# 非通知フラグ取得
         suppress_notify = page[KEY_PRPPERTIES].get(PROP_SUPRESS_NOTIFY_NAME, {}).get(KEY_CHECKBOX, False)
@@ -157,9 +324,12 @@ def main():
         new_state[page_id] = status_id
 
         # 差分検知（ステータスIDで比較）
-        if page_id not in prev_state or prev_state[page_id] != status_id:
+        # ステータスが更新されていたら
+        if page_id not in prev_state or prev_state[page_id] != status_id or force_notify:
+            # 非通知設定されていない、かつ、ステータスが"進行中"、または、強制通知設定されている
             if not suppress_notify and status_id == STATUS_ID_INPROGRESS or force_notify:
-                send_discord_notification(title, page_id, assignee_names)
+                send_discord_notification(title, page_id, assignee_names,checker_names)
+                update_page_property(page_id,PROP_FORCE_NOTIFY_NAME,False)
 
     save_state(new_state)
 
