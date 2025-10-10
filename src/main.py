@@ -12,6 +12,8 @@ def main():
     data = ntn.fetch_db_only_status_progress()
     notified_task_state = utils.load_notified_task_state()
 
+    task_count = 0
+    conference_count = 0
     for record in data.get(config.KEY_RESULTS, []):
         page_id = record.get(config.KEY_ID)
 
@@ -34,8 +36,10 @@ def main():
 
         if is_task == "タスク":
             dc.send_task_message(title, page_id, assignee_names, datetime)
+            task_count = task_count + 1
         elif is_task == "会議":
             dc.send_conference_message(title, page_id, assignee_names, datetime)
+            conference_count = conference_count + 1
         else:
             continue
 
@@ -43,6 +47,10 @@ def main():
 
 
     utils.save_notified_task_state(notified_task_state)
+    print(f"タスク: {task_count}件\n会議: {conference_count}件\n計: {task_count + conference_count}件のDiscordへの通知が完了しました。")
+    print()
+    if conference_count > 0:
+        print("会議の予定はサーバーにイベント登録してね")
 
 if __name__ == "__main__":
     main()
