@@ -1,20 +1,18 @@
 # Ntn2DC-TaskNotify
 
-プロジェクト"メテオコア・レギオン"専用のアプリケーションです。
+プロジェクト"HP開発"専用のアプリケーションです。
 NotionデータベースとDiscord Webhookを連携し、タスクのステータス変更を自動的にDiscordに通知を行います。
 
 ## 機能
 
-- **Notionデータベース監視**: 指定されたNotionデータベースのページを定期的に監視
-- **ステータス変更検知**: タスクのステータスが「進行中」に変更された際を検知
-- **Discord通知**: ステータス変更時に担当者をメンションしてDiscordに通知
+- **Notionのタスク、会議情報の取得**: Notion APIを利用して、手動でタスク、会議の情報を取得します
+- **Discord通知**: 担当者をメンションしてDiscordに通知
 - **ユーザーマッピング**: Notionの担当者名とDiscord IDをマッピング
-- **通知制御**: 非通知フラグや強制通知フラグによる通知の制御
 
 ## 必要要件
 
 - Python 3.7+
-- 必要なPythonパッケージ:
+- インストールが必要なPythonパッケージ:
   - `requests`
   - `python-dotenv`
 
@@ -23,7 +21,7 @@ NotionデータベースとDiscord Webhookを連携し、タスクのステー�
 ### 1. リポジトリのクローン
 
 ```bash
-git clone https://github.com/tokizg/Ntn2DC-TaskNotify.git
+git clone https://github.com/epen3420/Ntn2DC-TaskNotify.git
 cd Ntn2DC-TaskNotify
 ```
 
@@ -42,7 +40,8 @@ pip install requests python-dotenv
 NOTION_TOKEN=ntn_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 # Notionデータベース設定
-NOTION_DATABASE_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+NOTION_TASK_DATABASE_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+NOTION_MEMBER_DATABASE_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 
 # Discord設定
 DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/XXXXXXXXXXXXXXXXXX/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -54,7 +53,7 @@ DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/XXXXXXXXXXXXXXXXXX/XXXXXXXX
 - **NOTION_DATABASE_ID**: NotionデータベースページのURLから取得できます。
 
 ```text
-https://www.notion.so/ この部分がデータベースのIDです ?v=〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇
+https://www.notion.so/ [この部分がデータベースのIDです] ?v=〇〇〇〇〇〇〇〇〇〇〇〇〇〇〇
 ```
 
 - **DISCORD_WEBHOOK_URL**: Discordサーバーのチャンネル設定でWebhook URLを作成し、ここに割り当ててください。
@@ -81,9 +80,7 @@ https://www.notion.so/ この部分がデータベースのIDです ?v=〇〇〇
 | 名前 | タイトル | タスクのタイトル |
 | ステータス | ステータス | タスクの進行状況 |
 | 担当者 | マルチセレクト | タスクの担当者 |
-| 確認者 | マルチセレクト | タスクの確認者（オプション） |
-| 非通知 | チェックボックス | 通知を無効にするフラグ |
-| 強制通知 | チェックボックス | 強制的に通知するフラグ |
+| 種類 | セレクト | タスク、会議が選択できるように |
 
 ## 使用方法
 
@@ -91,7 +88,7 @@ https://www.notion.so/ この部分がデータベースのIDです ?v=〇〇〇
 
 ```bash
 cd src
-python notion_monitor.py
+python main.py
 ```
 
 ### 定期実行について
@@ -106,18 +103,17 @@ Ntn2DC-TaskNotify/
 ├── README.md
 ├── .env                    # 環境変数設定（要作成）
 └── src/
-    ├── notion_monitor.py   # メインスクリプト
+    ├── main.py   # メインスクリプト
+    ├── notion_client.py   # Notion系の機能
+    ├── discord_client.py   # Discord系の機能
+    ├── utils.py   # 通信系の機能
     ├── user_map.json      # ユーザーマッピング（要作成）
     └── last_state.json    # 前回の状態保存（自動生成）
 ```
 
 ## 通知の仕組み
 
-1. **フィルタリング**:
-  a. **"進行中"に変わった場合**: 基本的に、ステータスが"進行中"になったタスクのみ通知を行います。
-  b. **"強制通知"フラグ**: ステータスの更新の有無にかかわらず、これがTrueなタスクはすべて通知を行います。通知後に、このフラグはFalseになります。
-  c. **"非通知"フラグ**: このフラグがTrueなタスクは、通知が行われません。
-  フラグの優先順位は、**非通知フラグ** > **強制通知フラグ**です。
+1. **フィルタリング**: **進行中**となっているタスク、会議のみ通知可能です
 2. **メッセージ配信**: 担当者をメンションしてDiscordに通知
 
 ## 注意事項
