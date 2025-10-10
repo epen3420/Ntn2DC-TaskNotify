@@ -45,12 +45,17 @@ def main():
 
         notified_task_state.setdefault(page_id, title)
 
-
     utils.save_notified_task_state(notified_task_state)
-    print(f"タスク: {task_count}件\n会議: {conference_count}件\n計: {task_count + conference_count}件のDiscordへの通知が完了しました。")
-    print()
-    if conference_count > 0:
-        print("会議の予定はサーバーにイベント登録してね")
+
+    if task_count + conference_count <= 0:
+        print("未通知のタスクまたは会議はありませんでした")
+    else:
+        print(f"タスク: {task_count}件\n会議: {conference_count}件\n計: {task_count + conference_count}件のDiscordへの通知が完了しました。")
+        print()
+
+        if conference_count > 0:
+            print("会議の予定はサーバーにイベント登録してね")
+
 
 if __name__ == "__main__":
     main()
