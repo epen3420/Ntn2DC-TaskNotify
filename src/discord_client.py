@@ -37,10 +37,10 @@ def _send_discord_notification(title: str, page_id: str, assignees: list, dateti
 
     message_content = ""
     if is_task:
-        deadline_str = f"<t:{datetime_unix}:d> ({weekday})"
+        deadline_str = f"<t:{datetime_unix}:d>"
         message_content = config.build_task_message(title, assignee_mention_str.rstrip("\n"), page_url, deadline_str)
     else:
-        start_time_str = f"<t:{datetime_unix}:d> ({weekday}) <t:{datetime_unix}:t>"
+        start_time_str = f"<t:{datetime_unix}:F>"
         message_content = config.build_conference_message(title, assignee_mention_str.rstrip("\n"), page_url, start_time_str)
 
     _send_message_to_discord(message_content)
