@@ -6,6 +6,8 @@ import notion_client
 
 WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"]
 
+SUPPRESS_SEND_CODE = 4096
+
 def send_task_message(title: str, page_id: str, assignees: list, deadline: str):
     _send_discord_notification(title, page_id, assignees, deadline, True)
 
@@ -37,7 +39,7 @@ def _send_discord_notification(title: str, page_id: str, assignees: list, dateti
 
     message_content = ""
     if is_task:
-        deadline_str = f"<t:{datetime_unix}:d>"
+        deadline_str = f"<t:{datetime_unix}:d> {weekday}"
         message_content = config.build_task_message(title, assignee_mention_str.rstrip("\n"), page_url, deadline_str)
     else:
         start_time_str = f"<t:{datetime_unix}:F>"
@@ -45,10 +47,15 @@ def _send_discord_notification(title: str, page_id: str, assignees: list, dateti
 
     _send_message_to_discord(message_content)
 
-def _send_message_to_discord(message_content: str):
+def _send_message_to_discord(message_content: str, should_silent : bool = True):
+    if should_silent:
+        send_code = SUPPRESS_SEND_CODE
+    else:
+        send_code = 0
+
     message = {
         "content": message_content.strip(),
-        "flags": 4096  # Suppress notifications
+        "flags": send_code
     }
 
     requests.post(config.DISCORD_WEBHOOK_URL, json=message)
