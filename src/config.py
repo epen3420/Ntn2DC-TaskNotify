@@ -45,6 +45,8 @@ PROP_DEADLINE="締切日"
 PROP_SUPPRESS_NOTIFY_NAME = "非通知"
 PROP_FORCE_NOTIFY_NAME = "強制通知"
 PROP_KIND_NAME = "種類"
+PROP_TASK_NAME = "タスク"
+PROP_CONFERENCE_NAME = "会議"
 
 # Notionステータス名
 STATUS_NAME_PROGRESS = "進行中"
@@ -59,7 +61,7 @@ USER_MAP_FILE = "user_map.json"
 def build_conference_message(title, assignee_mention_str, page_url, start_date):
     return f"""
 > # {title}
-## 開始日: {start_date}
+## 開始日時: {start_date}
 ## 担当者
 {assignee_mention_str}
 

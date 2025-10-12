@@ -34,10 +34,10 @@ def main():
 
         is_task = ntn.get_select(record, config.PROP_KIND_NAME)
 
-        if is_task == "タスク":
+        if is_task == config.PROP_TASK_NAME:
             dc.send_task_message(title, page_id, assignee_names, datetime)
             task_count = task_count + 1
-        elif is_task == "会議":
+        elif is_task == config.PROP_CONFERENCE_NAME:
             dc.send_conference_message(title, page_id, assignee_names, datetime)
             conference_count = conference_count + 1
         else:

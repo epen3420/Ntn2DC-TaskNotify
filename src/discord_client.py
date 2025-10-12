@@ -7,12 +7,14 @@ import notion_client
 SUPPRESS_SEND_CODE = 4096
 
 def send_task_message(title: str, page_id: str, assignees: list, deadline: str):
-    _send_discord_notification(title, page_id, assignees, deadline, True)
+    message_content = _build_discord_message(title, page_id, assignees, deadline, True)
+    _send_message_to_discord(message_content)
 
 def send_conference_message(title: str, page_id: str, assignees: list, start_time: str):
-    _send_discord_notification(title, page_id, assignees, start_time, False)
+    message_content = _build_discord_message(title, page_id, assignees, start_time, False)
+    _send_message_to_discord(message_content)
 
-def _send_discord_notification(title: str, page_id: str, assignees: list, datetime: str, is_task: bool):
+def _build_discord_message(title: str, page_id: str, assignees: list, datetime: str, is_task: bool):
     user_map = utils.load_user_map()
     if user_map == dict():
         raise Exception("NullException: there are not discord user maps")
@@ -33,13 +35,10 @@ def _send_discord_notification(title: str, page_id: str, assignees: list, dateti
 
     datetime_str = utils.convert_to_datetime_obj(datetime)
 
-    message_content = ""
     if is_task:
-        message_content = config.build_task_message(title, assignee_mention_str.rstrip("\n"), page_url, datetime_str)
+        return config.build_task_message(title, assignee_mention_str.rstrip("\n"), page_url, datetime_str)
     else:
-        message_content = config.build_conference_message(title, assignee_mention_str.rstrip("\n"), page_url, datetime_str)
-
-    _send_message_to_discord(message_content)
+        return config.build_conference_message(title, assignee_mention_str.rstrip("\n"), page_url, datetime_str)
 
 def _send_message_to_discord(message_content: str, should_silent : bool = True):
     if should_silent:
