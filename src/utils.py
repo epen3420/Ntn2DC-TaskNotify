@@ -19,21 +19,17 @@ def load_user_map() -> dict:
             return json.load(f)
     return dict()
 
-def convert_to_datetime_obj(time_string: str) -> datetime:
-    # 1. まずISO形式（時間やタイムゾーンを含む）での変換を試す
-    try:
-        # fromisoformatは '2025-10-08' のような日付だけだとエラーになる
-        dt_object = datetime.fromisoformat(time_string)
-        return dt_object
-    except ValueError:
-        # 2. ISO形式でエラーになったら、日付だけの形式 ('%Y-%m-%d') での変換を試す
-        try:
-            dt_object = datetime.strptime(time_string, '%Y-%m-%d')
-            return dt_object
-        except ValueError:
-            # 3. どちらの形式でもなければ、エラーメッセージを出してNoneを返す
-            print(f"エラー: '{time_string}' は対応していない形式です。")
-            return None
+def convert_to_datetime_obj(time_str: str) -> str:
+    WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"]
+
+    dt_obj = datetime.fromisoformat(time_str)
+    week_index = dt_obj.weekday()
+    week_day_str = WEEKDAYS[week_index]
+
+    if dt_obj.hour == 0 and dt_obj.second == 0:
+        return dt_obj.strftime(f'%Y/%m/%d ({week_day_str})')
+    else:
+        return dt_obj.strftime(f'%Y/%m/%d ({week_day_str}) %H:%M')
 
 def ask_continue(message: str) -> bool:
     yes_str = ["Yes", "yes", "Y", "y"]

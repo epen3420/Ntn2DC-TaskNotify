@@ -4,8 +4,6 @@ import utils
 import notion_client
 
 
-WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"]
-
 SUPPRESS_SEND_CODE = 4096
 
 def send_task_message(title: str, page_id: str, assignees: list, deadline: str):
@@ -33,17 +31,13 @@ def _send_discord_notification(title: str, page_id: str, assignees: list, dateti
     for assignee in assignee_mentions:
         assignee_mention_str = assignee_mention_str + f"\\- {assignee}\n"
 
-    datetime_obj = utils.convert_to_datetime_obj(datetime)
-    datetime_unix = int(datetime_obj.timestamp())
-    weekday = WEEKDAYS[datetime_obj.weekday()]
+    datetime_str = utils.convert_to_datetime_obj(datetime)
 
     message_content = ""
     if is_task:
-        deadline_str = f"<t:{datetime_unix}:d> {weekday}"
-        message_content = config.build_task_message(title, assignee_mention_str.rstrip("\n"), page_url, deadline_str)
+        message_content = config.build_task_message(title, assignee_mention_str.rstrip("\n"), page_url, datetime_str)
     else:
-        start_time_str = f"<t:{datetime_unix}:F>"
-        message_content = config.build_conference_message(title, assignee_mention_str.rstrip("\n"), page_url, start_time_str)
+        message_content = config.build_conference_message(title, assignee_mention_str.rstrip("\n"), page_url, datetime_str)
 
     _send_message_to_discord(message_content)
 
