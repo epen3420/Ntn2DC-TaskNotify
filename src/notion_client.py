@@ -63,3 +63,8 @@ def retrieve_member_dict() -> dict:
 def build_notion_url(page_id: str) -> str:
     clean_id = page_id.replace("-", "")
     return f"https://www.notion.so/{clean_id}"
+
+if __name__ == '__main__':
+    import json
+    data = fetch_db_only_status_progress()
+    print(json.dumps(data[config.KEY_RESULTS], indent=2,ensure_ascii=False))
