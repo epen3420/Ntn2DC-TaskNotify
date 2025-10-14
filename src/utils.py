@@ -4,18 +4,21 @@ import json
 import config
 
 def load_notified_task_state() -> dict:
-    if os.path.exists(config.STATE_FILE):
-        with open(config.STATE_FILE, config.FILE_MODE_READ, encoding=config.ENCODER) as f:
+    if os.path.exists(config.NOTIFIED_STATE_PATH):
+        with open(config.NOTIFIED_STATE_PATH, config.FILE_MODE_READ, encoding=config.ENCODER) as f:
             return json.load(f)
     return dict()
 
 def save_notified_task_state(page_id_titles: dict) -> None:
-    with open(config.STATE_FILE, config.FILE_MODE_WRITE, encoding=config.ENCODER) as f:
+    if not os.path.exists(config.LOG_PATH):
+        os.mkdir(config.LOG_PATH)
+
+    with open(config.NOTIFIED_STATE_PATH, config.FILE_MODE_WRITE, encoding=config.ENCODER) as f:
         json.dump(page_id_titles, f, indent=2, ensure_ascii=False)
 
 def load_user_map() -> dict:
-    if os.path.exists(config.USER_MAP_FILE):
-        with open(config.USER_MAP_FILE, config.FILE_MODE_READ, encoding=config.ENCODER) as f:
+    if os.path.exists(config.USER_MAP_PATH):
+        with open(config.USER_MAP_PATH, config.FILE_MODE_READ, encoding=config.ENCODER) as f:
             return json.load(f)
     return dict()
 

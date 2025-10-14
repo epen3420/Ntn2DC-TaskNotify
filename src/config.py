@@ -55,8 +55,9 @@ STATUS_NAME_PROGRESS = "進行中"
 FILE_MODE_READ = "r"
 FILE_MODE_WRITE = "w"
 ENCODER = "utf-8"
-STATE_FILE = "../log/last_state.json"
-USER_MAP_FILE = "../data/user_map.json"
+LOG_PATH = "../log"
+NOTIFIED_STATE_PATH = "../log/notified_state.json"
+USER_MAP_PATH = "../data/user_map.json"
 
 def build_conference_message(title, assignee_mention_str, page_url, start_date):
     return f"""
