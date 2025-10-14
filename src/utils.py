@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 import json
+import shutil
 import config
 
 def load_notified_task_state() -> dict:
@@ -51,3 +52,21 @@ def ask_continue(message: str) -> bool:
         exit(1)
     else:
         return ask_continue(message)
+
+def remove_log() -> None:
+    shutil.rmtree(config.LOG_PATH)
+    os.mkdir(config.LOG_PATH)
+
+if __name__ == '__main__':
+    yes_str = ["y", "Y", "yes", "Yes"]
+    no_str = ["n", "N", "no", "No"]
+    is_continue = input("Do you want to remove log folder? (y/n) ")
+    if is_continue not in yes_str + no_str:
+        print("Invalid input")
+        exit()
+
+    if is_continue in no_str:
+        exit()
+
+    remove_log()
+    print("removed log folder")
