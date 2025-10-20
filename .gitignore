@@ -180,5 +180,5 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
-log/last_state.json
+log/
 data/user_map.json
