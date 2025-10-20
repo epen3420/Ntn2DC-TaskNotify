@@ -28,8 +28,9 @@ def main():
             continue
 
 
-        time_str = ntn.get_deadline(record)
-        dt_obj = datetime.fromisoformat(time_str)
+        start_time_str = ntn.get_stateDate(record)
+        deadline_str = ntn.get_deadline(record)
+        dt_obj = datetime.fromisoformat(deadline_str)
 
         if datetime.now(timezone.utc) >= dt_obj.replace(tzinfo=timezone.utc):
             notified_task_progress.append([title, page_id])
@@ -44,10 +45,10 @@ def main():
         is_task = ntn.get_select(record, config.PROP_KIND_NAME)
 
         if is_task == config.PROP_TASK_NAME:
-            dc.send_task_message(title, page_id, assignee_names, time_str)
+            dc.send_task_message(title, page_id, assignee_names, deadline_str)
             task_count = task_count + 1
         elif is_task == config.PROP_CONFERENCE_NAME:
-            dc.send_conference_message(title, page_id, assignee_names, time_str)
+            dc.send_conference_message(title, page_id, assignee_names, start_time_str)
             conference_count = conference_count + 1
         else:
             continue

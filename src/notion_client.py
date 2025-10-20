@@ -52,6 +52,9 @@ def get_relation_records(record: dict, prop_name: str) -> list:
 def get_deadline(record: dict) -> str:
     return record[config.KEY_PROPERTIES].get(config.PROP_DEADLINE).get("date").get("start")
 
+def get_stateDate(record: dict) -> str:
+    return record[config.KEY_PROPERTIES].get(config.PROP_START_DATE).get("date").get("start")
+
 def retrieve_member_dict() -> dict:
     member_datas = fetch_db(config.MEMBER_DATABASE_ID)
     member_dict = dict()
