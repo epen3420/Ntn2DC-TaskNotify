@@ -5,6 +5,7 @@ import config
 from datetime import datetime, timezone
 
 def main():
+    # メンバーDBから一度だけメンバー情報を取る
     member_dict = ntn.retrieve_member_dict()
     if member_dict == dict():
         print("NullException: Can't get member list")
@@ -13,6 +14,7 @@ def main():
     data = ntn.fetch_db_only_status_progress()
     notified_task_state = utils.load_notified_task_state()
 
+    # ログ表示の集計用
     task_count = 0
     conference_count = 0
 
@@ -32,6 +34,7 @@ def main():
         deadline_str = ntn.get_deadline(record)
         dt_obj = datetime.fromisoformat(deadline_str)
 
+        # 今より前が期限のタスクがあればコンソールで通知するため
         if datetime.now(timezone.utc) >= dt_obj.replace(tzinfo=timezone.utc):
             notified_task_progress.append([title, page_id])
             continue
