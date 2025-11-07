@@ -3,8 +3,18 @@ import discord_client as dc
 import utils
 import config
 from datetime import datetime, timezone
+from argparse import ArgumentParser
 
 def main():
+    parser = ArgumentParser()
+    parser.add_argument(
+        "-c", "--check",
+        action="store_true",
+        help="次通知する内容を確認できます。"
+    )
+    args = parser.parse_args()
+    is_check_mode = args.check
+
     # メンバーDBから一度だけメンバー情報を取る
     member_dict = ntn.retrieve_member_dict()
     if member_dict == dict():
@@ -19,6 +29,7 @@ def main():
     conference_count = 0
 
     notified_task_progress = []
+    notify_strs = []
     for record in data.get(config.KEY_RESULTS, []):
         page_id = record.get(config.KEY_ID)
 
@@ -48,17 +59,24 @@ def main():
         is_task = ntn.get_select(record, config.PROP_KIND_NAME)
 
         if is_task == config.PROP_TASK_NAME:
-            dc.send_task_message(title, page_id, assignee_names, deadline_str)
+            notify_strs.append( dc.send_task_message(title, page_id, assignee_names, deadline_str))
             task_count = task_count + 1
         elif is_task == config.PROP_CONFERENCE_NAME:
-            dc.send_conference_message(title, page_id, assignee_names, start_time_str)
+            notify_strs.append(dc.send_conference_message(title, page_id, assignee_names, start_time_str))
             conference_count = conference_count + 1
         else:
             continue
 
         notified_task_state.setdefault(page_id, title)
 
-    utils.save_notified_task_state(notified_task_state)
+    if is_check_mode == False:
+        utils.save_notified_task_state(notified_task_state)
+    else:
+        for notify_str in notify_strs:
+            print(notify_str)
+        return
+
+
 
     if len(notified_task_progress) != 0:
         print(f"締め切りを過ぎて、進行中のタスクが{len(notified_task_progress)}件あります")

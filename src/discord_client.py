@@ -9,10 +9,12 @@ SUPPRESS_SEND_CODE = 4096
 def send_task_message(title: str, page_id: str, assignees: list, deadline: str):
     message_content = _build_discord_message(title, page_id, assignees, deadline, True)
     _send_message_to_discord(message_content)
+    return message_content
 
 def send_conference_message(title: str, page_id: str, assignees: list, start_time: str):
     message_content = _build_discord_message(title, page_id, assignees, start_time, False)
     _send_message_to_discord(message_content)
+    return message_content
 
 def _build_discord_message(title: str, page_id: str, assignees: list, datetime: str, is_task: bool):
     user_map = utils.load_user_map()
