@@ -53,9 +53,21 @@ def ask_continue(message: str) -> bool:
     else:
         return ask_continue(message)
 
-def remove_log() -> None:
     shutil.rmtree(config.LOG_PATH)
     os.mkdir(config.LOG_PATH)
+
+def ask_yes_no(question: str) -> bool:
+    yes_str = ["yes", "y"]
+    no_str = ["no", "n"]
+
+    while True:
+        choice = input(f"{question} (y/n): ").lower()
+        if choice in yes_str:
+            return True
+        elif choice in no_str:
+            return False
+        else:
+            print("Please enter 'y' or 'n'.")
 
 if __name__ == '__main__':
     yes_str = ["y", "Y", "yes", "Yes"]
