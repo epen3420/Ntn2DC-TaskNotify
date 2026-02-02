@@ -31,9 +31,7 @@ def _build_discord_message(title: str, page_id: str, assignees: list, datetime: 
         else:
             print(f"NullException: Not found discord id: [{name}]")
 
-    assignee_mention_str = ""
-    for assignee in assignee_mentions:
-        assignee_mention_str = assignee_mention_str + f"\\- {assignee}\n"
+    assignee_mention_str = "\n".join([f"\\- {assignee}" for assignee in assignee_mentions])
 
     datetime_str = utils.convert_to_datetime_obj(datetime)
 
