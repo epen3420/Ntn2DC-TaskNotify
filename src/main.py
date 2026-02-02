@@ -27,13 +27,19 @@ def main():
         title = ntn.get_title(record)
         if not title: continue
 
+        kind = ntn.get_select_value(record, config.PROP_KIND_NAME)
+        if not kind: continue
+        if not (kind == config.PROP_TASK_NAME or kind == config.PROP_CONFERENCE_NAME): continue
+
         start_time_str = ntn.get_stateDate(record)
-        deadline_str = ntn.get_deadline(record)
+        if kind == config.PROP_TASK_NAME:
+            deadline_str = ntn.get_deadline(record)
+        else:
+            deadline_str = None
 
         assignee_records = ntn.get_relation_records(record, config.PROP_ASSIGNEE_NAME)
         assignee_names = [member_dict[assignee_id.get(ntn.KEY_ID)] for assignee_id in assignee_records]
 
-        kind = ntn.get_select_value(record, config.PROP_KIND_NAME)
 
         candidates.append({
             "idx": 0, # Placeholder
