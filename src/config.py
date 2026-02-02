@@ -51,6 +51,7 @@ PROP_CONFERENCE_NAME = "会議"
 
 # Notionステータス名
 STATUS_NAME_PROGRESS = "進行中"
+PROP_NOTIFIED_NAME = "通知済"
 
 # ファイル関連
 FILE_MODE_READ = "r"
