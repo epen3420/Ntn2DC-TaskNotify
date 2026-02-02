@@ -17,9 +17,11 @@ def main():
 
     candidates = []
 
+    candidate_list = []
+
     # 候補リスト作成
-    for record in data.get(config.KEY_RESULTS, []):
-        page_id = record.get(config.KEY_ID)
+    for record in data.get(ntn.KEY_RESULTS, []):
+        page_id = record.get(ntn.KEY_ID)
         if not page_id: continue
 
         title = ntn.get_title(record)
@@ -29,7 +31,7 @@ def main():
         deadline_str = ntn.get_deadline(record)
 
         assignee_records = ntn.get_relation_records(record, config.PROP_ASSIGNEE_NAME)
-        assignee_names = [member_dict[assignee_id.get(config.KEY_ID)] for assignee_id in assignee_records]
+        assignee_names = [member_dict[assignee_id.get(ntn.KEY_ID)] for assignee_id in assignee_records]
 
         kind = ntn.get_select_value(record, config.PROP_KIND_NAME)
 

@@ -10,19 +10,6 @@ TASK_DATABASE_ID = os.getenv("NOTION_TASK_DATABASE_ID")
 MEMBER_DATABASE_ID = os.getenv("NOTION_MEMBER_DATABASE_ID")
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 
-# NotionAPI JSONキー
-KEY_ID = "id"
-KEY_STATUS = "status"
-KEY_NAME = "name"
-KEY_PLAIN_TEXT = "plain_text"
-KEY_RESULTS = "results"
-KEY_PROPERTIES = "properties"
-KEY_TITLE = "title"
-KEY_CHECKBOX = "checkbox"
-KEY_SELECT = "select"
-KEY_MULTI_SELECT = "multi_select"
-KEY_DATE = "date"
-
 # Notionプロパティ名
 PROP_TITLE_NAME = "名前"
 PROP_STATUS_NAME = "ステータス"

@@ -15,6 +15,19 @@ NOTION_PAGES_API_URL = "https://api.notion.com/v1/pages/"
 QUERY_ENDPOINT = "/query"
 NOTION_API_VERSION = "2022-06-28"
 
+# NotionAPI JSONキー
+KEY_ID = "id"
+KEY_STATUS = "status"
+KEY_NAME = "name"
+KEY_PLAIN_TEXT = "plain_text"
+KEY_RESULTS = "results"
+KEY_PROPERTIES = "properties"
+KEY_TITLE = "title"
+KEY_CHECKBOX = "checkbox"
+KEY_SELECT = "select"
+KEY_MULTI_SELECT = "multi_select"
+KEY_DATE = "date"
+
 HEADERS = {
     HEADER_AUTHORIZATION: f"{HEADER_BEARER_PREFIX}{config.NOTION_TOKEN}",
     HEADER_NOTION_VERSION: NOTION_API_VERSION,
@@ -33,13 +46,13 @@ def fetch_db_only_status_progress() -> dict:
             "and": [
                 {
                     "property": config.PROP_STATUS_NAME,
-                    config.KEY_STATUS: {
+                    KEY_STATUS: {
                         "equals": config.STATUS_NAME_PROGRESS,
                     }
                 },
                 {
                     "property": config.PROP_NOTIFIED_NAME,
-                    config.KEY_CHECKBOX: {
+                    KEY_CHECKBOX: {
                         "equals": False,
                     }
                 }
@@ -56,46 +69,46 @@ def get_page_from_id(page_id: str) -> dict:
     return res.json()
 
 def get_title(record: dict) -> str:
-    title_prop = record[config.KEY_PROPERTIES].get(config.PROP_TITLE_NAME)
-    if not title_prop or not title_prop[config.KEY_TITLE]:
+    title_prop = record[KEY_PROPERTIES].get(config.PROP_TITLE_NAME)
+    if not title_prop or not title_prop[KEY_TITLE]:
         return None
-    return title_prop[config.KEY_TITLE][0][config.KEY_PLAIN_TEXT]
+    return title_prop[KEY_TITLE][0][KEY_PLAIN_TEXT]
 
 def get_checkbox_value(record: dict, prop_name: str) -> bool:
-    return record[config.KEY_PROPERTIES].get(prop_name, {}).get(config.KEY_CHECKBOX, False)
+    return record[KEY_PROPERTIES].get(prop_name, {}).get(KEY_CHECKBOX, False)
 
 def get_select_value(record: dict, prop_name: str) -> str:
-    select_data = record[config.KEY_PROPERTIES].get(prop_name, {}).get(config.KEY_SELECT)
+    select_data = record[KEY_PROPERTIES].get(prop_name, {}).get(KEY_SELECT)
     if select_data:
         return select_data.get("name")
     return None
 
 def get_relation_records(record: dict, prop_name: str) -> list:
-    relation_prop = record[config.KEY_PROPERTIES][prop_name]["relation"]
+    relation_prop = record[KEY_PROPERTIES][prop_name]["relation"]
     if not relation_prop:
         return []
     return relation_prop
 
 def get_deadline(record: dict) -> str:
-    return record[config.KEY_PROPERTIES].get(config.PROP_DEADLINE).get("date").get("start")
+    return record[KEY_PROPERTIES].get(config.PROP_DEADLINE).get("date").get("start")
 
 def get_stateDate(record: dict) -> str:
-    return record[config.KEY_PROPERTIES].get(config.PROP_START_DATE).get("date").get("start")
+    return record[KEY_PROPERTIES].get(config.PROP_START_DATE).get("date").get("start")
 
 def retrieve_member_dict() -> dict:
     member_datas = fetch_db(config.MEMBER_DATABASE_ID)
     member_dict = dict()
-    for member in member_datas[config.KEY_RESULTS]:
-        member_dict.setdefault(member[config.KEY_ID], get_title(member))
+    for member in member_datas[KEY_RESULTS]:
+        member_dict.setdefault(member[KEY_ID], get_title(member))
 
     return member_dict
 
 def update_page_checkbox(page_id: str, prop_name: str, value: bool) -> dict:
     url = f"{NOTION_PAGES_API_URL}{page_id}"
     payload = {
-        config.KEY_PROPERTIES: {
+        KEY_PROPERTIES: {
             prop_name: {
-                config.KEY_CHECKBOX: value
+                KEY_CHECKBOX: value
             }
         }
     }
@@ -110,4 +123,4 @@ def build_notion_url(page_id: str) -> str:
 if __name__ == '__main__':
     import json
     data = fetch_db_only_status_progress()
-    print(json.dumps(data[config.KEY_RESULTS], indent=2,ensure_ascii=False))
+    print(json.dumps(data[KEY_RESULTS], indent=2,ensure_ascii=False))
