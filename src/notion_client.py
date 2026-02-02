@@ -16,10 +16,20 @@ def fetch_db(database_id: str, payload: dict = dict()) -> dict:
 def fetch_db_only_status_progress() -> dict:
     payload = {
         "filter": {
-            "property": config.PROP_STATUS_NAME,
-            config.KEY_STATUS: {
-                "equals": config.STATUS_NAME_PROGRESS,
-            }
+            "and": [
+                {
+                    "property": config.PROP_STATUS_NAME,
+                    config.KEY_STATUS: {
+                        "equals": config.STATUS_NAME_PROGRESS,
+                    }
+                },
+                {
+                    "property": config.PROP_NOTIFIED_NAME,
+                    config.KEY_CHECKBOX: {
+                        "equals": False,
+                    }
+                }
+            ]
         }
     }
 
@@ -37,11 +47,14 @@ def get_title(record: dict) -> str:
         return None
     return title_prop[config.KEY_TITLE][0][config.KEY_PLAIN_TEXT]
 
-def get_select(record: dict, prop_name: str) -> bool:
+def get_checkbox_value(record: dict, prop_name: str) -> bool:
     return record[config.KEY_PROPERTIES].get(prop_name, {}).get(config.KEY_CHECKBOX, False)
 
-def get_select(record: dict, prop_name: str) -> str:
-    return record[config.KEY_PROPERTIES].get(prop_name, {}).get(config.KEY_SELECT).get("name")
+def get_select_value(record: dict, prop_name: str) -> str:
+    select_data = record[config.KEY_PROPERTIES].get(prop_name, {}).get(config.KEY_SELECT)
+    if select_data:
+        return select_data.get("name")
+    return None
 
 def get_relation_records(record: dict, prop_name: str) -> list:
     relation_prop = record[config.KEY_PROPERTIES][prop_name]["relation"]
@@ -62,6 +75,19 @@ def retrieve_member_dict() -> dict:
         member_dict.setdefault(member[config.KEY_ID], get_title(member))
 
     return member_dict
+
+def update_page_checkbox(page_id: str, prop_name: str, value: bool) -> dict:
+    url = f"{config.NOTION_PAGES_API_URL}{page_id}"
+    payload = {
+        config.KEY_PROPERTIES: {
+            prop_name: {
+                config.KEY_CHECKBOX: value
+            }
+        }
+    }
+    res = requests.patch(url, headers=HEADERS, json=payload)
+    res.raise_for_status()
+    return res.json()
 
 def build_notion_url(page_id: str) -> str:
     clean_id = page_id.replace("-", "")
