@@ -2,98 +2,105 @@ import notion_client as ntn
 import discord_client as dc
 import utils
 import config
-from datetime import datetime, timezone
-from argparse import ArgumentParser
+from typing import Tuple, Any, Optional
 
 def main():
-    parser = ArgumentParser()
-    parser.add_argument(
-        "-c", "--check",
-        action="store_true",
-        help="次通知する内容を確認できます。"
-    )
-    args = parser.parse_args()
-    is_check_mode = args.check
-
     # メンバーDBから一度だけメンバー情報を取る
     member_dict = ntn.retrieve_member_dict()
     if member_dict == dict():
         print("NullException: Can't get member list")
         exit()
 
+    # 進行中 かつ 通知済チェック無し のタスクを取得 (config.PROP_NOTIFIED_NAME が False のもの)
+    print("Fetching tasks from Notion...")
     data = ntn.fetch_db_only_status_progress()
-    notified_task_state = utils.load_notified_task_state()
 
-    # ログ表示の集計用
-    task_count = 0
-    conference_count = 0
+    candidates = []
 
-    notified_task_progress = []
-    notify_strs = []
+    # 候補リスト作成
     for record in data.get(config.KEY_RESULTS, []):
         page_id = record.get(config.KEY_ID)
-
-        if not page_id:
-            continue
+        if not page_id: continue
 
         title = ntn.get_title(record)
-        if not title:
-            continue
-
+        if not title: continue
 
         start_time_str = ntn.get_stateDate(record)
         deadline_str = ntn.get_deadline(record)
-        dt_obj = datetime.fromisoformat(deadline_str)
-
-        # 今より前が期限のタスクがあればコンソールで通知するため
-        if datetime.now(timezone.utc) >= dt_obj.replace(tzinfo=timezone.utc):
-            notified_task_progress.append([title, page_id])
-            continue
-
-        if page_id in notified_task_state:
-            continue
 
         assignee_records = ntn.get_relation_records(record, config.PROP_ASSIGNEE_NAME)
         assignee_names = [member_dict[assignee_id.get(config.KEY_ID)] for assignee_id in assignee_records]
 
-        is_task = ntn.get_select(record, config.PROP_KIND_NAME)
+        kind = ntn.get_select_value(record, config.PROP_KIND_NAME)
 
-        if is_task == config.PROP_TASK_NAME:
-            notify_strs.append( dc.send_task_message(title, page_id, assignee_names, deadline_str))
-            task_count = task_count + 1
-        elif is_task == config.PROP_CONFERENCE_NAME:
-            notify_strs.append(dc.send_conference_message(title, page_id, assignee_names, start_time_str))
-            conference_count = conference_count + 1
-        else:
-            continue
+        candidates.append({
+            "idx": 0, # Placeholder
+            "title": title,
+            "page_id": page_id,
+            "kind": kind,
+            "deadline": deadline_str,
+            "start_time": start_time_str,
+            "assignees": assignee_names,
+            "record": record
+        })
 
-        notified_task_state.setdefault(page_id, title)
-
-    if is_check_mode == False:
-        utils.save_notified_task_state(notified_task_state)
-    else:
-        for notify_str in notify_strs:
-            print(notify_str)
+    if not candidates:
+        print("No tasks found to notify.")
         return
 
+    # インタラクティブに送信対象を選択
+    selected_tasks = []
+    print(f"\nFound {len(candidates)} candidate tasks/conferences.")
 
+    for i, task in enumerate(candidates):
+        print("-" * 50)
+        print(f"[{i+1}/{len(candidates)}] {task['kind']}")
+        print(f"Title: {task['title']}")
+        if task['kind'] == config.PROP_TASK_NAME:
+            print(f"Deadline: {task['deadline']}")
+        else:
+            print(f"Start Time: {task['start_time']}")
+        print(f"Assignees: {', '.join(task['assignees'])}")
 
-    if len(notified_task_progress) != 0:
-        print(f"締め切りを過ぎて、進行中のタスクが{len(notified_task_progress)}件あります")
-        print("以下のタスクが完了している場合は、更新してください")
-        for task in notified_task_progress:
-            print(f"  - {task[0]}\n\t{ntn.build_notion_url(task[1])}")
-        print()
+        if utils.ask_yes_no("Add to notification list?"):
+            selected_tasks.append(task)
+            print(">> Added.")
+        else:
+            print(">> Skipped.")
 
+    if not selected_tasks:
+        print("\nNo tasks selected. Exiting.")
+        return
 
-    if task_count + conference_count <= 0:
-        print("未通知のタスクまたは会議はありませんでした")
-    else:
-        print(f"タスク: {task_count}件\n会議: {conference_count}件\n計: {task_count + conference_count}件のDiscordへの通知が完了しました。")
-        print()
+    # 最終確認
+    print("\n" + "=" * 50)
+    print(f"You have selected {len(selected_tasks)} items to notify:")
+    for task in selected_tasks:
+        print(f" - [{task['kind']}] {task['title']}")
+    print("=" * 50)
 
-        if conference_count > 0:
-            print("会議の予定はサーバーにイベント登録してね")
+    if not utils.ask_yes_no("Proceed to send notifications and update Notion status?"):
+        print("Aborted.")
+        return
+
+    # 送信処理
+    print("\nSending notifications...")
+    success_count = 0
+    for task in selected_tasks:
+        try:
+            if task['kind'] == config.PROP_TASK_NAME:
+                dc.send_task_message(task['title'], task['page_id'], task['assignees'], task['deadline'])
+            elif task['kind'] == config.PROP_CONFERENCE_NAME:
+                dc.send_conference_message(task['title'], task['page_id'], task['assignees'], task['start_time'])
+
+            # Notionの「通知済」チェックボックスを更新
+            ntn.update_page_checkbox(task['page_id'], config.PROP_NOTIFIED_NAME, True)
+            print(f"[OK] {task['title']}")
+            success_count += 1
+        except Exception as e:
+            print(f"[ERROR] Failed to process '{task['title']}': {e}")
+
+    print(f"\nCompleted. {success_count}/{len(selected_tasks)} notifications sent.")
 
 
 if __name__ == "__main__":
