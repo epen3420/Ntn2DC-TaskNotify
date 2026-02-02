@@ -43,14 +43,9 @@ def _build_discord_message(title: str, page_id: str, assignees: list, datetime: 
         return config.build_conference_message(title, assignee_mention_str.rstrip("\n"), page_url, datetime_str)
 
 def _send_message_to_discord(message_content: str, should_silent : bool = True):
-    if should_silent:
-        send_code = SUPPRESS_SEND_CODE
-    else:
-        send_code = 0
-
     message = {
         "content": message_content.strip(),
-        "flags": send_code
+        "flags": SUPPRESS_SEND_CODE if should_silent else 0
     }
 
     requests.post(config.DISCORD_WEBHOOK_URL, json=message)
