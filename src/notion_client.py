@@ -1,14 +1,28 @@
 import requests
 import config
 
+
+# HTTPヘッダー関連
+HEADER_AUTHORIZATION = "Authorization"
+HEADER_BEARER_PREFIX = "Bearer "
+HEADER_NOTION_VERSION = "Notion-Version"
+HEADER_CONTENT_TYPE = "Content-Type"
+CONTENT_TYPE_JSON = "application/json"
+
+# NotionAPI関連
+NOTION_API_BASE_URL = "https://api.notion.com/v1/databases/"
+NOTION_PAGES_API_URL = "https://api.notion.com/v1/pages/"
+QUERY_ENDPOINT = "/query"
+NOTION_API_VERSION = "2022-06-28"
+
 HEADERS = {
-    config.HEADER_AUTHORIZATION: f"{config.HEADER_BEARER_PREFIX}{config.NOTION_TOKEN}",
-    config.HEADER_NOTION_VERSION: config.NOTION_API_VERSION,
-    config.HEADER_CONTENT_TYPE: config.CONTENT_TYPE_JSON
+    HEADER_AUTHORIZATION: f"{HEADER_BEARER_PREFIX}{config.NOTION_TOKEN}",
+    HEADER_NOTION_VERSION: NOTION_API_VERSION,
+    HEADER_CONTENT_TYPE: CONTENT_TYPE_JSON
 }
 
 def fetch_db(database_id: str, payload: dict = dict()) -> dict:
-    url = f"{config.NOTION_API_BASE_URL}{database_id}{config.QUERY_ENDPOINT}"
+    url = f"{NOTION_API_BASE_URL}{database_id}{QUERY_ENDPOINT}"
     res = requests.post(url, headers=HEADERS, json=payload)
     res.raise_for_status()
     return res.json()
@@ -36,7 +50,7 @@ def fetch_db_only_status_progress() -> dict:
     return fetch_db(config.TASK_DATABASE_ID, payload)
 
 def get_page_from_id(page_id: str) -> dict:
-    url = f"{config.NOTION_PAGES_API_URL}{page_id}"
+    url = f"{NOTION_PAGES_API_URL}{page_id}"
     res = requests.get(url, headers=HEADERS)
     res.raise_for_status()
     return res.json()
@@ -77,7 +91,7 @@ def retrieve_member_dict() -> dict:
     return member_dict
 
 def update_page_checkbox(page_id: str, prop_name: str, value: bool) -> dict:
-    url = f"{config.NOTION_PAGES_API_URL}{page_id}"
+    url = f"{NOTION_PAGES_API_URL}{page_id}"
     payload = {
         config.KEY_PROPERTIES: {
             prop_name: {

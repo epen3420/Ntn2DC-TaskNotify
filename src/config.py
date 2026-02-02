@@ -10,19 +10,6 @@ TASK_DATABASE_ID = os.getenv("NOTION_TASK_DATABASE_ID")
 MEMBER_DATABASE_ID = os.getenv("NOTION_MEMBER_DATABASE_ID")
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 
-# HTTPヘッダー関連
-HEADER_AUTHORIZATION = "Authorization"
-HEADER_BEARER_PREFIX = "Bearer "
-HEADER_NOTION_VERSION = "Notion-Version"
-HEADER_CONTENT_TYPE = "Content-Type"
-CONTENT_TYPE_JSON = "application/json"
-
-# NotionAPI関連
-NOTION_API_BASE_URL = "https://api.notion.com/v1/databases/"
-NOTION_PAGES_API_URL = "https://api.notion.com/v1/pages/"
-QUERY_ENDPOINT = "/query"
-NOTION_API_VERSION = "2022-06-28"
-
 # NotionAPI JSONキー
 KEY_ID = "id"
 KEY_STATUS = "status"
@@ -53,10 +40,6 @@ PROP_CONFERENCE_NAME = "会議"
 STATUS_NAME_PROGRESS = "進行中"
 PROP_NOTIFIED_NAME = "通知済"
 
-# ファイル関連
-FILE_MODE_READ = "r"
-FILE_MODE_WRITE = "w"
-ENCODER = "utf-8"
 LOG_PATH = "../log"
 NOTIFIED_STATE_PATH = "../log/notified_state.json"
 USER_MAP_PATH = "../data/user_map.json"
